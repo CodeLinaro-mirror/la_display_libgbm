@@ -51,11 +51,6 @@
  *
  * Authors:
  *    Benjamin Franzke <benjaminfranzke@googlemail.com>
- *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- *
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 #include <stdio.h>
 #include <stdint.h>
@@ -247,11 +242,7 @@ unsigned int
 gbm_bo_get_stride(struct gbm_bo *bo)
 {
     if(bo!=NULL){
-        if(bo->usage_flags & GBM_BO_USAGE_UBWC_ALIGNED_QTI){
-            return bo->stride_for_plane(1, bo);
-        } else {
-            return bo->stride_for_plane(0, bo);
-        }
+        return bo->stride;
     }
     else {
         fprintf(stderr,"%s(%d): NULL or Invalid bo pointer\n",__func__,__LINE__);
