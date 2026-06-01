@@ -1,4 +1,7 @@
 /*
+* Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+* Not a Contribution.
+*
 * Copyright (c) 2017-2018, 2021 The Linux Foundation. All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -50,11 +53,7 @@
 #include <msmgbm.h>
 #include <msmgbm_common.h>
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,4,0)
-#include <media/msm_media_info.h>
-#else
-#include "msm_media_info.h"
-#endif
+#include <display/media/mmm_color_fmt.h>
 #include <linux/msm_mdp.h>
 #ifdef BUILD_HAS_WAYLAND_SUPPORT
 #include <wayland-server.h>
@@ -178,7 +177,7 @@ struct msmgbm_surface * to_msmgbm_surface(struct gbm_surface*surf)
     return (struct msmgbm_surface *)surf;
 }
 
-inline
+static inline
 void  msmgbm_dump_hashmap(void)
 {
     dump_hashmap();
@@ -317,11 +316,18 @@ static int GetFormatBpp(uint32_t format)
 {
    switch(format)
    {
+        case GBM_FORMAT_R8:
+            return 1;
+        case GBM_FORMAT_RG88:
+        case GBM_FORMAT_R16:
         case GBM_FORMAT_RGB565:
         case GBM_FORMAT_BGR565:
             return 2;
         case GBM_FORMAT_RGB888:
+        case GBM_FORMAT_BGR888:
             return 3;
+        case GBM_FORMAT_RG1616:
+        case GBM_FORMAT_BGRA8888:
         case GBM_FORMAT_RGBA8888:
         case GBM_FORMAT_RGBX8888:
         case GBM_FORMAT_XRGB8888:
@@ -356,9 +362,15 @@ static int IsFormatSupported(uint32_t format)
 
     switch(format)
     {
+        case GBM_FORMAT_R8:
+        case GBM_FORMAT_RG88:
+        case GBM_FORMAT_R16:
+        case GBM_FORMAT_RG1616:
         case GBM_FORMAT_RGB565:
         case GBM_FORMAT_BGR565:
         case GBM_FORMAT_RGB888:
+        case GBM_FORMAT_BGR888:
+        case GBM_FORMAT_BGRA8888:
         case GBM_FORMAT_RGBA8888:
         case GBM_FORMAT_RGBX8888:
         case GBM_FORMAT_XRGB8888:
@@ -395,9 +407,15 @@ is_format_rgb(uint32_t format)
 
     switch(format)
     {
+        case GBM_FORMAT_R8:
+        case GBM_FORMAT_RG88:
+        case GBM_FORMAT_R16:
+        case GBM_FORMAT_RG1616:
         case GBM_FORMAT_RGB565:
         case GBM_FORMAT_BGR565:
         case GBM_FORMAT_RGB888:
+        case GBM_FORMAT_BGR888:
+        case GBM_FORMAT_BGRA8888:
         case GBM_FORMAT_RGBA8888:
         case GBM_FORMAT_RGBX8888:
         case GBM_FORMAT_XRGB8888:
@@ -2294,6 +2312,22 @@ int msmgbm_perform(int operation, ... )
                 qry_aligned_wdth_hght(&bufdesc, align_wdth, align_hght);
 
                 *size = qry_size(&bufdesc, *align_wdth, *align_hght);
+
+                res = GBM_ERROR_NONE;
+            }
+            break;
+        case GBM_PERFORM_GET_BUFFER_STRIDE_SCANLINE_SIZE:
+            {
+                struct gbm_buf_info * buf_info = va_arg(args, struct gbm_buf_info *);
+                uint32_t usage_flags = va_arg(args, uint32_t);
+                uint32_t *stride = va_arg(args, uint32_t *);
+                uint32_t *scanline = va_arg(args, uint32_t *);
+                uint32_t *size = va_arg(args, uint32_t *);
+
+                struct gbm_bufdesc bufdesc = {buf_info->width, buf_info->height,
+                                              buf_info->format, usage_flags};
+
+                qry_stride_scanline_size(&bufdesc, stride, scanline, size);
 
                 res = GBM_ERROR_NONE;
             }

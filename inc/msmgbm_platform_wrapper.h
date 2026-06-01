@@ -27,6 +27,12 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
+* Changes from Qualcomm Innovation Center are provided under the following license:
+* Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+* SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
+
 #ifndef __MSMGBM_PFM_WRP_H__
 #define __MSMGBM_PFM_WRP_H__
 
@@ -36,11 +42,7 @@
 #include <linux/version.h>
 
 #ifdef VENUS_COLOR_FORMAT
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,4,0)
-#include <media/msm_media_info.h>
-#else
-#include "msm_media_info.h"
-#endif
+#include <display/media/mmm_color_fmt.h>
 #else
 #define VENUS_Y_STRIDE(args...) 0
 #define VENUS_Y_SCANLINES(args...) 0
@@ -120,6 +122,15 @@ class platform_wrap {
    */
   int is_valid_rgb_fmt(int gbm_format);
 
+  /**
+   * Function to check whether the format is RAW
+   * @params    gbm format
+   * @return    true : success
+   *            false : fail
+   *
+   */
+  bool is_valid_raw_fmt(int format);
+
   uint32_t get_bpp_for_uncmprsd_rgb_fmt(int format);
 
   /**
@@ -130,6 +141,24 @@ class platform_wrap {
    *
    */
   bool is_valid_uncmprsd_rgb_fmt(int format);
+
+  /**
+   * Function to check whether the format is uncompressed RGB
+   * @params    gbm format
+   * @return    boolean 0 (uncompressed RGB format)
+   *                    1 (compressed RGB format)
+   *
+   */
+  bool is_valid_cmprsd_rgb_fmt(int format);
+
+  /**
+   * Function to check whether the format is yuv format
+   * @params    gbm format
+   * @return   true : success
+   *           false : fail
+   *
+   */
+  bool is_valid_yuv_fmt(int format);
 
   /**
    * Function to query UBWC feature support
@@ -150,6 +179,15 @@ class platform_wrap {
    */
   void get_aligned_wdth_hght(gbm_bufdesc *descriptor, unsigned int *aligned_w,
                                       unsigned int *aligned_h);
+
+  /**
+   * Function to get stride, scanline and size depending on the underlying GPU/Video platform
+   * @return    stride
+   *            scanline
+   *            size
+   */
+  void get_stride_scanline_size(gbm_bufdesc *descriptor, unsigned int *stride,
+                                unsigned int *scanline, unsigned int *size);
 
   /**
    * Function to get  size aligned width and height depending on the underlying GPU/Video platform
@@ -176,6 +214,9 @@ class platform_wrap {
     void get_yuv_ubwc_wdth_hght(int width, int height, int format,
                                           unsigned int *aligned_w, unsigned int *aligned_h);
 
+    bool is_ubwc_flex_format(int format);
+    uint32_t get_batch_size(int format);
+
  private:
   bool gpu_support_macrotile = false;
   bool display_support_macrotile = false;
@@ -190,6 +231,15 @@ extern "C" {
     *            aligned_h
     */
     void qry_aligned_wdth_hght(gbm_bufdesc *descriptor, unsigned int *alignedw, unsigned int *alignedh);
+
+    /**
+    * C wrapper Function to get stride, scanline and size depending on the underlying GPU/Video platform
+    * @return    stride
+    *            scanline
+    *            size
+    */
+    void qry_stride_scanline_size(gbm_bufdesc *descriptor, unsigned int *stride,
+                                  unsigned int *scanline, unsigned int *size);
 
     /**
      * C wrapper Function to query size based on format from the platform wrapper
@@ -231,11 +281,35 @@ extern "C" {
     bool is_valid_uncmprsd_rgb_format(int format);
 
     /**
+    * C wrapper Function to check whether the format is uncompressed RGB format or not.
+    * @params    gbm format
+    * @return    boolean 0 (uncompressed RGB format)
+    *                    1 (compressed RGB format)
+    */
+    bool is_valid_cmprsd_rgb_format(int format);
+
+    /**
+    * C wrapper Function to check whether the format is yuv format or not.
+    * @params    gbm format
+    * @return    boolean 0 (non yuv format)
+    *                    1 (yuv format)
+    */
+    bool is_valid_yuv_format(int format);
+
+    /**
      * C wrapper function to know if the format is UBWC
      */
-
     bool is_ubwc_enbld(int format, int prod_usage,
                               int cons_usage);
+
+    /**
+    * C wrapper Function to check whether the format is RAW format or not.
+    * @params    gbm format
+    * @return    boolean 0 (non RAW format)
+    *                    1 (RAW format)
+    */
+    bool is_valid_raw_format(int format);
+
     /**
      * C wrapper function to know if the format is RGB
      */
@@ -254,6 +328,18 @@ extern "C" {
      */
     bool platform_wrap_instnce(void);
 
+    /**
+     * C wrapper function to know if the format is camera custom format
+     * @return true  : if format is camera custom format
+     *         false : if format is not camera custom format
+     */
+    bool IsCameraCustomFormat(uint32_t format, uint64_t usage);
+
+    /**
+     * C wrapper function to Get camera planeInfo
+     * @return generic_buf_layout_t plane info
+     */
+    int GetCameraPlaneInfo(struct msmgbm_bo *msm_gbm_bo, generic_buf_layout_t *buf_lyt);
 }
 
 }  // namespace msm_gbm
