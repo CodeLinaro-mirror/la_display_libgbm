@@ -5,10 +5,12 @@ gbm_include_HEADERS = $(gbm_h_sources)
 
 AM_CFLAGS = -Wundef -Wstrict-prototypes -Wno-trigraphs
 AM_CFLAGS+= -I./inc -I$(WORKSPACE)/vendor/qcom/opensource/commonsys-intf/display/include
+AM_CFLAGS+= -I$(WORKSPACE)/display/vendor/qcom/opensource/commonsys-intf/display/include
 AM_CFLAGS+= -DGBM_DEBUG -DALLOCATE_SURFACE_BO_AT_CREATION -DBUILD_HAS_WAYLAND_SUPPORT -DVENUS_COLOR_FORMAT -DGET_FD_WITH_NEW
 
 AM_CPPFLAGS = -Wundef -Wstrict-prototypes -Wno-trigraphs
 AM_CPPFLAGS+= -I./inc -I$(WORKSPACE)/vendor/qcom/opensource/commonsys-intf/display/include
+AM_CPPFLAGS+= -I$(WORKSPACE)/display/vendor/qcom/opensource/commonsys-intf/display/include
 AM_CPPFLAGS+= -DGBM_DEBUG -DALLOCATE_SURFACE_BO_AT_CREATION -DBUILD_HAS_WAYLAND_SUPPORT -DVENUS_COLOR_FORMAT -DGET_FD_WITH_NEW
 
 
@@ -41,3 +43,11 @@ libgbmutils_la_SOURCES = src/gbm_utils.cpp
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = gbm.pc
 EXTRA_DIST = $(pkgconfig_DATA)
+
+install-data-hook:
+	@src_hdr="$(WORKSPACE)/display/vendor/qcom/opensource/commonsys-intf/display/include/color_metadata.h"; \
+	test -f "$$src_hdr" || src_hdr="$(WORKSPACE)/vendor/qcom/opensource/commonsys-intf/display/include/color_metadata.h"; \
+	if test -f "$$src_hdr"; then \
+		$(MKDIR_P) "$(DESTDIR)$(includedir)"; \
+		$(INSTALL_DATA) "$$src_hdr" "$(DESTDIR)$(includedir)/color_metadata.h"; \
+	fi
