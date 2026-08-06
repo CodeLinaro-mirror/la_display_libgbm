@@ -172,8 +172,10 @@ msmgbm_stride_for_plane(int plane, struct gbm_bo * bo) {
   bool cmprsd_rgb_format = is_valid_cmprsd_rgb_format(bo->format);
   bool is_yuv_format = is_valid_yuv_format(bo->format);
 
-  LOG(LOG_DBG,"plane=%d bo->format=%d ubwc_enabled=%d is_yuv_format=%d cmprsd_rgb=%d\n",
-                plane, bo->format, ubwc_enabled, is_yuv_format, cmprsd_rgb_format);
+  LOG(LOG_DBG,"plane=%d format_name %s bo->format=%d ubwc_enabled=%d "
+      "is_yuv_format=%d cmprsd_rgb=%d\n",
+      plane, get_format_string(bo->format), bo->format, ubwc_enabled,
+      is_yuv_format, cmprsd_rgb_format);
 
   if (is_valid_raw_format(bo->format)) {
     switch (bo->format) {
@@ -486,6 +488,7 @@ static int GetFormatBpp(uint32_t format)
         case GBM_FORMAT_C8:
         case GBM_FORMAT_NV12_HEIF:
         case GBM_FORMAT_YCbCr_420_P010_VENUS:
+        case GBM_FORMAT_YCbCr_420_P010_512:
         case GBM_FORMAT_YCbCr_420_P010_UBWC:
         case GBM_FORMAT_YCbCr_422_I:
         case GBM_FORMAT_YCrCb_422_I:
@@ -565,6 +568,7 @@ static int IsFormatSupported(uint32_t format)
         case GBM_FORMAT_C8:
         case GBM_FORMAT_NV12_HEIF:
         case GBM_FORMAT_YCbCr_420_P010_VENUS:
+        case GBM_FORMAT_YCbCr_420_P010_512:
         case GBM_FORMAT_YCbCr_422_I:
         case GBM_FORMAT_YCrCb_422_I:
         case GBM_FORMAT_RGB161616F:
@@ -712,6 +716,7 @@ msmgbm_get_format_modifier_plane_count(uint32_t format,
     case GBM_FORMAT_NV12_ENCODEABLE:
     case GBM_FORMAT_NV12:
     case GBM_FORMAT_NV12_HEIF:
+    case GBM_FORMAT_YCbCr_420_P010_512:
     case GBM_FORMAT_YCrCb_420_SP:
     case GBM_FORMAT_YCrCb_422_SP:
     case GBM_FORMAT_YCrCb_420_SP_VENUS:
@@ -846,7 +851,7 @@ msmgbm_bo_create(struct gbm_device *gbm,
         Bpp = GetFormatBpp(format);
     else
     {
-        LOG(LOG_ERR,"Format (0x%x) not supported\n",format);
+        LOG(LOG_ERR,"Format %s(0x%x) not supported\n",get_format_string(format), format);
         return NULL;
     }
 
@@ -1074,12 +1079,14 @@ void msmgbm_get_bufinfo(struct gbm_bo *bo){
         LOG(LOG_ERR, "GBM BO is NULL\n");
         return;
     }
-    LOG(LOG_DBG,"GBM BO info is ion_fd = %d, ion_metadata_fd = %d, gem_handle = %u,"
-        " metadata_gem_handle = %u, format = 0x%x, width = %d, height = %d, aligned_width = %d,"
-        " aligned_height = %d, BPP = %d, stride = %d, size = %d, usage = %d, plane_count = %d\n",
-        bo->ion_fd, bo->ion_metadata_fd, bo->handle.u32, bo->metadata_handle.u32, bo->format,
-        bo->width, bo->height, bo->aligned_width, bo->aligned_height, bo->bpp, bo->stride,
-        bo->size, bo->usage_flags, bo->plane_count);
+    LOG(LOG_DBG,"GBM BO info is ion_fd = %d, ion_metadata_fd = %d, gem_handle = %u, "
+        "metadata_gem_handle = %u, format_name = %s, format = 0x%x, width = %d, "
+        "height = %d, aligned_width = %d, aligned_height = %d, BPP = %d, "
+        "stride = %d, size = %d, usage = %d, plane_count = %d\n",
+        bo->ion_fd, bo->ion_metadata_fd, bo->handle.u32,
+        bo->metadata_handle.u32, get_format_string(bo->format), bo->format,bo->width,
+        bo->height, bo->aligned_width, bo->aligned_height, bo->bpp,
+        bo->stride, bo->size, bo->usage_flags, bo->plane_count);
     print_refcnt(bo->ion_fd);
 }
 
@@ -1167,14 +1174,17 @@ msmgbm_bo_import_fd(struct msmgbm_device *msm_dev,
         incr_refcnt(buffer_info->fd);
 
     }
-    LOG(LOG_DBG," format: 0x%x width: %d height: %d \n",buffer_info->format, buffer_info->width, buffer_info->height);
+    LOG(LOG_DBG," format: %s(0x%x) width: %d height: %d \n",
+        get_format_string(buffer_info->format), buffer_info->format,
+        buffer_info->width, buffer_info->height);
     unlock();
 
     if(1 == IsFormatSupported(buffer_info->format))
         Bpp = GetFormatBpp(buffer_info->format);
     else
     {
-        LOG(LOG_ERR,"Format (0x%x) not supported\n",buffer_info->format);
+        LOG(LOG_ERR,"Format %s(0x%x) not supported\n",
+            get_format_string(buffer_info->format), buffer_info->format);
         return NULL;
     }
 
@@ -1311,7 +1321,8 @@ msmgbm_bo_import_fd_modifier(struct msmgbm_device *msm_dev,
   }
   else
   {
-      LOG(LOG_ERR,"Format (0x%x) not supported\n", fd_data->format);
+      LOG(LOG_ERR,"Format %s(0x%x) not supported\n",
+          get_format_string(fd_data->format), fd_data->format);
       return NULL;
   }
       //Search Map for a valid entry, we have only one FD for all buffers
@@ -1526,15 +1537,17 @@ msmgbm_bo_import_gbm_buf(struct msmgbm_device *msm_dev,
         return NULL;
     }
 
-    LOG(LOG_DBG," fd=%d meta_fd=%d format: 0x%x width: %d height: %d \n",
-        buffer_info->fd, buffer_info->metadata_fd, buffer_info->format,
+    LOG(LOG_DBG," fd=%d meta_fd=%d format: %s(0x%x) width: %d height: %d \n",
+        buffer_info->fd, buffer_info->metadata_fd,
+        get_format_string(buffer_info->format), buffer_info->format,
         buffer_info->width, buffer_info->height);
 
     if(1 == IsFormatSupported(buffer_info->format))
         Bpp = GetFormatBpp(buffer_info->format);
     else
     {
-        LOG(LOG_ERR,"Format (0x%x) not supported\n", buffer_info->format);
+        LOG(LOG_ERR,"Format %s(0x%x) not supported\n",
+            get_format_string(buffer_info->format), buffer_info->format);
         return NULL;
     }
 
@@ -3314,6 +3327,7 @@ int msmgbm_yuv_plane_info(struct gbm_bo *gbo,generic_buf_layout_t *buf_lyt){
             break;
         case GBM_FORMAT_P010:
         case GBM_FORMAT_YCbCr_420_P010_VENUS:
+        case GBM_FORMAT_YCbCr_420_P010_512:
         case GBM_FORMAT_YCbCr_422_I:
         case GBM_FORMAT_YCrCb_422_I:
         case GBM_FORMAT_YCbCr_420_P010_FLEX:
@@ -3418,7 +3432,8 @@ int msmgbm_get_buf_lyout(struct gbm_bo *gbo, generic_buf_layout_t *buf_lyt)
         Bpp = GetFormatBpp(gbo->format);
     else
     {
-        LOG(LOG_ERR,"Format (0x%x) not supported\n",gbo->format);
+        LOG(LOG_ERR,"Format %s(0x%x) not supported\n",
+            get_format_string(gbo->format), gbo->format);
         return NULL;
     }
     buf_lyt->pixel_format = gbo->format;

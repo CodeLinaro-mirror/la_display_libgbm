@@ -56,6 +56,7 @@
 #include <wayland-server.h>
 #include <drm/drm_fourcc.h>
 #include <display/drm/sde_drm.h>
+#include <msmgbm_common.h>
 #ifdef USE_GLIB
 #include <glib.h>
 #define strlcat g_strlcat
@@ -114,6 +115,7 @@ static const uint32_t format_list[] = {
     GBM_FORMAT_YCbCr_420_TP10_UBWC,
     GBM_FORMAT_P010,
     GBM_FORMAT_NV12_HEIF,
+    GBM_FORMAT_YCbCr_420_P010_512,
     GBM_FORMAT_YCbCr_422_I,
     GBM_FORMAT_NV12_UBWC_FLEX,
     GBM_FORMAT_NV12_UBWC_FLEX_2_BATCH,
@@ -159,43 +161,6 @@ static int check_bo(struct gbm_bo *bo)
     CHECK(gbm_bo_get_stride(bo) >= gbm_bo_get_width(bo));
 
     return 1;
-}
-
-static char *get_format_string(uint32_t format)
-{
-    switch(format)
-    {
-        case GBM_FORMAT_YCbCr_420_888:
-            return "GBM_FORMAT_YCbCr_420_888";
-        case GBM_FORMAT_XBGR8888:
-            return "GBM_FORMAT_XBGR8888";
-        case GBM_FORMAT_NV12_ENCODEABLE:
-            return "GBM_FORMAT_NV12_ENCODEABLE";
-        case GBM_FORMAT_NV21_ZSL:
-            return "GBM_FORMAT_NV21_ZSL";
-        case GBM_FORMAT_YCrCb_420_SP:
-            return "GBM_FORMAT_YCrCb_420_SP";
-        case GBM_FORMAT_YCrCb_420_SP_VENUS:
-            return "GBM_FORMAT_YCrCb_420_SP_VENUS";
-        case GBM_FORMAT_YCbCr_420_SP_VENUS_UBWC:
-            return "GBM_FORMAT_YCbCr_420_SP_VENUS_UBWC";
-        case GBM_FORMAT_IMPLEMENTATION_DEFINED:
-            return "GBM_FORMAT_IMPLEMENTATION_DEFINED";
-        case GBM_FORMAT_RGBA8888:
-            return "GBM_FORMAT_RGBA8888";
-        case GBM_FORMAT_NV12_HEIF:
-            return "GBM_FORMAT_NV12_HEIF";
-        case GBM_FORMAT_YCbCr_420_P010_VENUS:
-            return "GBM_FORMAT_YCbCr_420_P010_VENUS";
-        case GBM_FORMAT_YCbCr_420_P010_UBWC:
-            return "GBM_FORMAT_YCbCr_420_P010_UBWC";
-        case GBM_FORMAT_YCbCr_420_TP10_UBWC:
-            return "GBM_FORMAT_YCbCr_420_TP10_UBWC";
-        case GBM_FORMAT_YCbCr_422_I:
-            return "GBM_FORMAT_YCbCr_422_I";
-        default:
-            return "NA";
-    }
 }
 
 static char *get_usage_string(uint32_t usage)
@@ -1163,6 +1128,8 @@ static int test_get_ubwc_status()
                          "GBM_BO_USE_WRITE             ", GBM_BO_USE_WRITE, 0},
              {"GBM_FORMAT_P010", GBM_FORMAT_P010,
                          "GBM_BO_USE_WRITE             ", GBM_BO_USE_WRITE, 0},
+             {"GBM_FORMAT_YCbCr_420_P010_512", GBM_FORMAT_YCbCr_420_P010_512,
+                         "GBM_BO_USE_WRITE             ", GBM_BO_USE_WRITE, 0},
              {"GBM_FORMAT_NONE", -1, "GBM_BO_NONE", -1, 0},
            };
 
@@ -1518,6 +1485,8 @@ static int test_surface_ubwc_status()
            {"GBM_FORMAT_ABGR2101010", GBM_FORMAT_ABGR2101010,
                        "GBM_BO_USE_WRITE             ", GBM_BO_USE_WRITE, 0},
            {"GBM_FORMAT_P010", GBM_FORMAT_P010,
+                       "GBM_BO_USE_WRITE             ", GBM_BO_USE_WRITE, 0},
+           {"GBM_FORMAT_YCbCr_420_P010_512", GBM_FORMAT_YCbCr_420_P010_512,
                        "GBM_BO_USE_WRITE             ", GBM_BO_USE_WRITE, 0},
            {"GBM_FORMAT_NONE", -1, "GBM_BO_NONE", -1, 0},
          };
@@ -2107,6 +2076,8 @@ static int test_plane_info()
     {GBM_FORMAT_IMPLEMENTATION_DEFINED, GBM_BO_USAGE_10BIT_QTI | GBM_BO_USAGE_UBWC_ALIGNED_QTI, GBM_FORMAT_YCbCr_420_P010_UBWC},
     {GBM_FORMAT_IMPLEMENTATION_DEFINED, GBM_BO_USAGE_10BIT_TP_QTI | GBM_BO_USAGE_UBWC_ALIGNED_QTI, GBM_FORMAT_YCbCr_420_TP10_UBWC},
     {GBM_FORMAT_IMPLEMENTATION_DEFINED, GBM_BO_USAGE_10BIT_QTI, GBM_FORMAT_YCbCr_420_P010_VENUS},
+    {GBM_FORMAT_YCbCr_420_P010_512, GBM_BO_USE_WRITE, GBM_FORMAT_YCbCr_420_P010_512},
+    {GBM_FORMAT_IMPLEMENTATION_DEFINED, GBM_BO_USAGE_PRIVATE_HEIF_P010, GBM_FORMAT_YCbCr_420_P010_512},
     {-1, -1, -1},
   };
 
@@ -2269,6 +2240,7 @@ static int test_implement_defined_format()
              {GBM_FORMAT_IMPLEMENTATION_DEFINED, GBM_BO_USAGE_10BIT_QTI | GBM_BO_USAGE_UBWC_ALIGNED_QTI, GBM_FORMAT_YCbCr_420_P010_UBWC},
              {GBM_FORMAT_IMPLEMENTATION_DEFINED, GBM_BO_USAGE_10BIT_TP_QTI | GBM_BO_USAGE_UBWC_ALIGNED_QTI, GBM_FORMAT_YCbCr_420_TP10_UBWC},
              {GBM_FORMAT_IMPLEMENTATION_DEFINED, GBM_BO_USAGE_10BIT_QTI, GBM_FORMAT_YCbCr_420_P010_VENUS},
+             {GBM_FORMAT_IMPLEMENTATION_DEFINED, GBM_BO_USAGE_PRIVATE_HEIF_P010, GBM_FORMAT_YCbCr_420_P010_512},
              {-1, -1, -1},
            };
 
