@@ -27,6 +27,12 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
+* Changes from Qualcomm Innovation Center are provided under the following license:
+* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+* SPDX-License-Identifier: BSD-3-Clause-Clear
+*/
+
 #ifndef __MSMGBM_MAPPER_H__
 #define __MSMGBM_MAPPER_H__
 
@@ -55,17 +61,21 @@ class msmgbm_mapper {
       uint32_t width;
       uint32_t height;
       uint32_t format;
+      uint32_t fd_flg;
+      int src_fd;
       int ref_count=0;
       void *cpuaddr = NULL;
       void *mt_cpuaddr = NULL;
 
       explicit msmgbm_buffer(int fd, int mtadta_fd, uint32_t wdth, uint32_t hght, uint32_t fmt,
-                                 void *cpu_addr, void *mt_cpu_addr):
+                                  uint32_t fd_flg, int src_fd, void *cpu_addr, void *mt_cpu_addr):
           ion_fd(fd),
           ion_metadata_fd(mtadta_fd),
           width(wdth),
           height(hght),
           format(fmt),
+          fd_flg(fd_flg),
+          src_fd(src_fd),
           cpuaddr(cpu_addr),
           mt_cpuaddr(mt_cpu_addr) {
           }

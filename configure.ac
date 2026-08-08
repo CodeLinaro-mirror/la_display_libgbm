@@ -27,8 +27,10 @@
 
 AC_PREREQ(2.61)
 
+m4_define([mesa_version], [21.1.1])
+m4_define([gbm_version], [mesa_version])
 AC_INIT([libgbm],
-    20.1.0,
+    [gbm_version],
     [],
     libgbm)
 
@@ -40,6 +42,16 @@ AM_MAINTAINER_MODE
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
+# Check for programs
+AM_PROG_AR
+
+PKG_CHECK_MODULES([LIBDMABUFHEAP], [libdmabufheap])
+AC_SUBST([LIBDMABUFHEAP_CFLAGS])
+AC_SUBST([LIBDMABUFHEAP_LIBS])
+
+PKG_CHECK_MODULES([LIBVMMEM], [libvmmem])
+AC_SUBST([LIBVMMEM_CFLAGS])
+AC_SUBST([LIBVMMEM_LIBS])
 
 AC_ARG_WITH([glib],
       AC_HELP_STRING([--with-glib],
@@ -81,13 +93,6 @@ AC_ARG_WITH(sanitized-headers,
        [Specify the location of the sanitized Linux headers]),
    [CPPFLAGS="$CPPFLAGS -I$withval"])
 
-AC_ARG_ENABLE([compilewithdrm],
-   AC_HELP_STRING([--enable-compilewithdrm],
-      [enable compilewithdrm, build gbm with compilewithdrm]),
-      [enable_compilewithdrm="${enableval}"],
-      enable_compilewithdrm=no)
-AM_CONDITIONAL([ENABLE_COMPILEWITHDRM], [test "x${enable_compilewithdrm}" = "xyes"])
-
 AC_ARG_ENABLE([wayland-support],
    AC_HELP_STRING([--enable-wayland-support],
       [with wayland support, build gbm with wayland-support]),
@@ -98,19 +103,6 @@ if test "x${enable_waylandsupport}" = "xyes"; then
     AC_DEFINE(BUILD_HAS_WAYLAND_SUPPORT, 1, [Enable when build has wayland support])
 fi
 
-AC_ARG_ENABLE([target-qrbx210],
-	AC_HELP_STRING([--enable-target-qrbx210],
-		[Enable conditional compile for target qrbx210]),
-	[target_qrbx210="${enableval}"],
-	target_qrbx210=no)
-AM_CONDITIONAL([IS_QRBX210], [test "x$target_qrbx210" = xyes])
-
-AC_ARG_ENABLE([target-qcs610],
-	AC_HELP_STRING([--enable-target-qcs610],
-		[Enable conditional compile for target qcs610]),
-	[target_qcs610="${enableval}"],
-	target_qcs610=no)
-AM_CONDITIONAL([IS_QCS610], [test "x$target_qcs610" = xyes])
 
 # Checks for programs.
 AC_PROG_CC
@@ -133,6 +125,13 @@ if test $ALLOCATE_SURFACE_BO_AT_CREATION = yes; then
         AC_DEFINE(ALLOCATE_SURFACE_BO_AT_CREATION, 1, [Enable surface's BO creation at surface creation time])
 fi
 
+GET_FD_WITH_NEW=yes
+
+AM_CONDITIONAL(GET_FD_WITH_NEW, test "x${GET_FD_WITH_NEW}" = "xyes")
+
+if test "x${GET_FD_WITH_NEW}" = "xyes"; then
+    AC_DEFINE(GET_FD_WITH_NEW, 1, [each call returns a new file descriptor with get_fd])
+fi
 
 AC_CONFIG_FILES([ \
     Makefile \

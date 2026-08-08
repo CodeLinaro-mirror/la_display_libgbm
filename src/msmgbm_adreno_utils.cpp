@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+* Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
 * Not a Contribution.
 *
 * Copyright (c) 2017-2018, 2021 The Linux Foundation. All rights reserved.
@@ -116,20 +116,7 @@ void adreno_mem_info::get_aligned_wdth_hght_uncmprsd_rgb_fmt(int width,
   int bpp = 4;
 
   switch (format) {
-    case GBM_FORMAT_RGBA32323232F:
-      bpp = 16;
-      break;
-    case GBM_FORMAT_RGB323232F:
-      bpp = 12;
-      break;
-    case GBM_FORMAT_RGBA16161616F:
-      bpp = 8;
-      break;
-    case GBM_FORMAT_RGB161616F:
-      bpp = 6;
-      break;
     case GBM_FORMAT_RGB888:
-    case GBM_FORMAT_BGR888:
       bpp = 3;
       break;
     case GBM_FORMAT_RG88:
@@ -224,6 +211,8 @@ ADRENOPIXELFORMAT adreno_mem_info::get_gpu_pxl_fmt(unsigned int gbm_format) {
       return ADRENO_PIXELFORMAT_R16G16_UNORM;
     case GBM_FORMAT_BGR888:
       return ADRENO_PIXELFORMAT_R8G8B8;
+    case GBM_FORMAT_BGRA8888:
+      return ADRENO_PIXELFORMAT_B8G8R8A8;
     case GBM_FORMAT_RGBA8888:
       return ADRENO_PIXELFORMAT_R8G8B8A8;
     case GBM_FORMAT_XBGR8888:
@@ -236,12 +225,8 @@ ADRENOPIXELFORMAT adreno_mem_info::get_gpu_pxl_fmt(unsigned int gbm_format) {
       return ADRENO_PIXELFORMAT_B5G6R5;
     case GBM_FORMAT_BGR565:
       return ADRENO_PIXELFORMAT_R5G6B5;
-    case GBM_FORMAT_RGB888:
-      return ADRENO_PIXELFORMAT_R8G8B8;
     case GBM_FORMAT_NV12_ENCODEABLE:
       return ADRENO_PIXELFORMAT_NV12;
-    case GBM_FORMAT_UYVY:
-      return ADRENO_PIXELFORMAT_UYVY;
     case GBM_FORMAT_YCbCr_420_SP_VENUS:
     case GBM_FORMAT_YCbCr_420_SP_VENUS_UBWC:
     case GBM_FORMAT_NV12:
@@ -250,14 +235,6 @@ ADRENOPIXELFORMAT adreno_mem_info::get_gpu_pxl_fmt(unsigned int gbm_format) {
       return ADRENO_PIXELFORMAT_TP10;
     case GBM_FORMAT_YCbCr_420_P010_UBWC:
       return ADRENO_PIXELFORMAT_P010;
-    case GBM_FORMAT_RGB161616F:
-      return ADRENO_PIXELFORMAT_R16G16B16_FLOAT;
-    case GBM_FORMAT_RGB323232F:
-      return ADRENO_PIXELFORMAT_R32G32B32_FLOAT;
-    case GBM_FORMAT_RGBA16161616F:
-      return ADRENO_PIXELFORMAT_R16G16B16A16_FLOAT;
-    case GBM_FORMAT_RGBA32323232F:
-      return ADRENO_PIXELFORMAT_R32G32B32A32_FLOAT;
     default:
       LOG(LOG_ERR,":No map for format: 0x%x",gbm_format);
       break;

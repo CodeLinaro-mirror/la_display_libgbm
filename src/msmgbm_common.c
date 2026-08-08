@@ -27,6 +27,12 @@
 * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
+ * ​​​​​Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries. 
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -57,7 +63,7 @@ uint32_t GetDefaultImplDefinedFormat(uint32_t usage_flags, uint32_t format)
           pixel_format = GBM_FORMAT_YCbCr_420_TP10_UBWC;
         }
     } else if (usage_flags & GBM_BO_USAGE_10BIT_QTI) {
-      pixel_format = GBM_FORMAT_YCbCr_420_P010_VENUS;
+      pixel_format = GBM_FORMAT_P010;
     }
 
     return pixel_format;
@@ -69,8 +75,9 @@ uint32_t GetImplDefinedFormat(uint32_t usage_flags, uint32_t format)
 
 
     pixel_format = GetDefaultImplDefinedFormat(usage_flags, pixel_format);
-    pixel_format = GetCameraImplDefinedFormat(usage_flags, pixel_format);
     pixel_format = GetVideoImplDefinedFormat(usage_flags, pixel_format);
+    pixel_format = GetCameraImplDefinedFormat(usage_flags, pixel_format);
+
 
     /*default if no valid format is set by camera/video*/
     if(IsImplDefinedFormat(pixel_format))
@@ -126,18 +133,24 @@ static uint32_t GetDefaultIonHeapId(uint32_t alloc_flags)
 
     if(alloc_flags & GBM_BO_ALLOC_SECURE_HEAP_QTI){
         ion_heap_id = ION_HEAP(ION_SECURE_HEAP_ID);
-    }else if(alloc_flags & GBM_BO_ALLOC_SECURE_DISPLAY_HEAP_QTI){
-        ion_heap_id = ION_HEAP(ION_SECURE_DISPLAY_HEAP_ID);
-    }else if(alloc_flags & GBM_BO_ALLOC_ADSP_HEAP_QTI){
-        ion_heap_id = ION_HEAP(ION_ADSP_HEAP_ID);
-    }else if(alloc_flags & GBM_BO_ALLOC_CAMERA_HEAP_QTI){
-        ion_heap_id = ION_HEAP(ION_CAMERA_HEAP_ID);
-    }else if(alloc_flags & GBM_BO_ALLOC_IOMMU_HEAP_QTI){
-	/*IOMMU_HEAP is deprecated, use ION_SYSTEM_HEAP_ID*/
-        ion_heap_id = ION_HEAP(ION_SYSTEM_HEAP_ID);
-    }else if(alloc_flags & GBM_BO_ALLOC_MM_HEAP_QTI){
-        ion_heap_id = ION_HEAP(ION_CP_MM_HEAP_ID);
-    }else{
+    }
+    if(alloc_flags & GBM_BO_ALLOC_SECURE_DISPLAY_HEAP_QTI){
+        ion_heap_id |= ION_HEAP(ION_SECURE_DISPLAY_HEAP_ID);
+    }
+    if(alloc_flags & GBM_BO_ALLOC_ADSP_HEAP_QTI){
+        ion_heap_id |= ION_HEAP(ION_ADSP_HEAP_ID);
+    }
+    if(alloc_flags & GBM_BO_ALLOC_CAMERA_HEAP_QTI){
+        ion_heap_id |= ION_HEAP(ION_CAMERA_HEAP_ID);
+    }
+    if(alloc_flags & GBM_BO_ALLOC_IOMMU_HEAP_QTI){
+      /*IOMMU_HEAP is deprecated, use ION_SYSTEM_HEAP_ID*/
+      ion_heap_id |= ION_HEAP(ION_SYSTEM_HEAP_ID);
+    }
+    if(alloc_flags & GBM_BO_ALLOC_MM_HEAP_QTI){
+        ion_heap_id |= ION_HEAP(ION_CP_MM_HEAP_ID);
+    }
+    if (!ion_heap_id) {
         ion_heap_id = ION_HEAP(ION_SYSTEM_HEAP_ID);
     }
 
