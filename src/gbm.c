@@ -51,12 +51,44 @@
  *
  * Authors:
  *    Benjamin Franzke <benjaminfranzke@googlemail.com>
- *
- * Changes from Qualcomm Innovation Center are provided under the following license:
- *
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
+
+/*
+* Changes from Qualcomm Innovation Center are provided under the following license:
+*
+* Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted (subject to the limitations in the
+* disclaimer below) provided that the following conditions are met:
+*
+*    * Redistributions of source code must retain the above copyright
+*      notice, this list of conditions and the following disclaimer.
+*
+*    * Redistributions in binary form must reproduce the above
+*      copyright notice, this list of conditions and the following
+*      disclaimer in the documentation and/or other materials provided
+*      with the distribution.
+*
+*    * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
+*      contributors may be used to endorse or promote products derived
+*      from this software without specific prior written permission.
+*
+* NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+* GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+* HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+* WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+* MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+* IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+* GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+* IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+* OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+* IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include <stdio.h>
 #include <stdint.h>
 #include <gbm.h>
@@ -247,7 +279,7 @@ unsigned int
 gbm_bo_get_stride(struct gbm_bo *bo)
 {
     if(bo!=NULL){
-        if(bo->usage_flags & GBM_BO_USAGE_UBWC_ALIGNED_QTI){
+        if (bo->usage_flags & GBM_BO_USAGE_UBWC_ALIGNED_QTI){
             return bo->stride_for_plane(1, bo);
         } else {
             return bo->stride_for_plane(0, bo);
@@ -343,10 +375,14 @@ gbm_bo_get_handle(struct gbm_bo *bo)
         return bo->handle;
 }
 
-/** Returns the file description of the buffer object
+/** Get a file descriptor for the buffer object
+ *
+ * Each call to gbm_bo_get_fd() returns a new file descriptor and the caller 
+ * is responsible for closing the file descriptor.
  *
  * \param bo The buffer object
- * \return Returns a file descriptor referring	to the underlying buffer
+ * \return Returns a file descriptor referring to the underlying buffer or -1
+ * if an error occurs.
  */
 int
 gbm_bo_get_fd(struct gbm_bo *bo)
@@ -356,8 +392,28 @@ gbm_bo_get_fd(struct gbm_bo *bo)
     }
     else {
         fprintf(stderr,"%s(%d): NULL or Invalid bo pointer\n",__func__,__LINE__);
-        return 0;
+        return -1;
     }
+}
+
+ /** Get a DMA-BUF file descriptor for the specified plane of the buffer object
+ *
+ * This function creates a DMA-BUF (also known as PRIME) file descriptor
+ * handle for the specified plane of the buffer object.  Each call to
+ * gbm_bo_get_fd_for_plane() returns a new file descriptor and the caller is
+ * responsible for closing the file descriptor.
+ * \param bo The buffer object
+ * \param plane The plane to get a DMA-BUF for
+ * \return Returns a file descriptor referring to the underlying buffer or -1
+ * if an error occurs.
+ *
+ * \sa gbm_bo_get_fd()
+ */
+int
+gbm_bo_get_fd_for_plane(struct gbm_bo *bo, int plane)
+{
+    /*in our implementation, all the planes have the same handle*/
+    return gbm_bo_get_fd(bo);
 }
 
 uint64_t
@@ -387,17 +443,21 @@ gbm_bo_get_plane_count(struct gbm_bo *bo)
 union gbm_bo_handle
 gbm_bo_get_handle_for_plane(struct gbm_bo *bo, int plane)
 {
-  union gbm_bo_handle handle;
+  union gbm_bo_handle ret;
+  ret.s32 = -1;
+
   if(bo!=NULL){
         if (plane <= MAX_NUM_OF_PLANES) {
-          return handle;
+          return bo->handle;
         } else {
-          return (handle);
+          fprintf(stderr,"%s(%d): plane_id(%d) over max(%d)!\n",
+            __func__, __LINE__, plane, MAX_NUM_OF_PLANES);
+          return (ret);
         }
     }
     else {
         fprintf(stderr,"%s(%d): NULL or Invalid bo pointer\n",__func__,__LINE__);
-        return handle;
+        return (ret);
     }
 }
 
@@ -612,6 +672,7 @@ gbm_bo_map(struct gbm_bo *bo,
            uint32_t flags, uint32_t *stride, void **map_data){
 
   bo->bo_map(x, y, width, height, flags, stride, map_data);
+  return NULL;
 }
 
 void

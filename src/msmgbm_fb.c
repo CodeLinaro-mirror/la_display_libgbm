@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+* Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
 * Not a Contribution.
 *
 * Copyright (c) 2017-2018, 2021 The Linux Foundation. All rights reserved.
@@ -177,7 +177,7 @@ struct msmgbm_surface * to_msmgbm_surface(struct gbm_surface*surf)
     return (struct msmgbm_surface *)surf;
 }
 
-inline
+static inline
 void  msmgbm_dump_hashmap(void)
 {
     dump_hashmap();
@@ -327,6 +327,7 @@ static int GetFormatBpp(uint32_t format)
         case GBM_FORMAT_BGR888:
             return 3;
         case GBM_FORMAT_RG1616:
+        case GBM_FORMAT_BGRA8888:
         case GBM_FORMAT_RGBA8888:
         case GBM_FORMAT_RGBX8888:
         case GBM_FORMAT_XRGB8888:
@@ -369,6 +370,7 @@ static int IsFormatSupported(uint32_t format)
         case GBM_FORMAT_BGR565:
         case GBM_FORMAT_RGB888:
         case GBM_FORMAT_BGR888:
+        case GBM_FORMAT_BGRA8888:
         case GBM_FORMAT_RGBA8888:
         case GBM_FORMAT_RGBX8888:
         case GBM_FORMAT_XRGB8888:
@@ -413,6 +415,7 @@ is_format_rgb(uint32_t format)
         case GBM_FORMAT_BGR565:
         case GBM_FORMAT_RGB888:
         case GBM_FORMAT_BGR888:
+        case GBM_FORMAT_BGRA8888:
         case GBM_FORMAT_RGBA8888:
         case GBM_FORMAT_RGBX8888:
         case GBM_FORMAT_XRGB8888:
@@ -2707,10 +2710,6 @@ int msmgbm_yuv_plane_info(struct gbm_bo *gbo,generic_buf_layout_t *buf_lyt){
             get_yuv_sp_plane_info(gbo->aligned_width, gbo->aligned_height,
                                   CHROMA_STEP, buf_lyt);
             break;
-        case GBM_FORMAT_YCbCr_420_SP_VENUS_UBWC:
-            get_yuv_ubwc_sp_plane_info(gbo->aligned_width, gbo->aligned_height,
-                                       COLOR_FMT_NV12_UBWC, buf_lyt);
-            break;
         default:
              res = GBM_ERROR_UNSUPPORTED;
              break;
@@ -2830,10 +2829,6 @@ int msmgbm_get_buf_lyout(struct gbm_bo *gbo, generic_buf_layout_t *buf_lyt)
             case GBM_FORMAT_P010:
                 get_yuv_sp_plane_info(gbo->aligned_width, gbo->aligned_height,
                                       CHROMA_STEP, buf_lyt);
-                break;
-            case GBM_FORMAT_YCbCr_420_SP_VENUS_UBWC:
-                get_yuv_ubwc_sp_plane_info(gbo->aligned_width, gbo->aligned_height,
-                                           COLOR_FMT_NV12_UBWC, buf_lyt);
                 break;
             default:
                  res = GBM_ERROR_UNSUPPORTED;
